@@ -1,0 +1,7 @@
+Must have GTK 2.0 libs installed
+
+Compile with
+
+```
+make
+```
