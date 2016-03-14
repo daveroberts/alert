@@ -7,6 +7,7 @@ static GtkWidget *button;
 static GtkWidget *label;
 static GtkWidget *debug_button;
 
+// method to call and check if "ack" was typed in
 static void check_end(GtkWidget* textbox){
   const gchar* data;
   data = gtk_entry_get_text(GTK_ENTRY(textbox));
