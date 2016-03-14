@@ -1,9 +1,11 @@
 #include <gtk/gtk.h>
+#include <stdio.h>
 
 static GtkWidget *window;
 static GtkWidget *vbox;
 static GtkWidget *button;
 static GtkWidget *label;
+static GtkWidget *debug_button;
 
 static void check_end(GtkWidget* textbox){
   const gchar* data;
@@ -19,6 +21,22 @@ static void check_end(GtkWidget* textbox){
 // callback function, data argument ignored
 static void button_pressed( GtkWidget *widget, GtkWidget* textbox){
   check_end(textbox);
+}
+
+// callback function, data argument ignored
+static void debug_button_pressed( GtkWidget *widget, GtkWidget* textbox){
+  g_print("Debug button pressed\n");
+  GdkScreen* screen = gtk_window_get_screen(GTK_WINDOW(window));
+  int width = gdk_screen_get_width(screen);
+  g_print("The screen is %d pixels wide\n", width);
+  int monitors = gdk_screen_get_n_monitors(screen);
+  g_print("The screen has %d monitors\n", monitors);
+  gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER_ALWAYS);
+
+  gint x;
+  gint y;
+  gtk_window_get_position(GTK_WINDOW(window), &x, &y);
+  g_print("The window is located at %d, %d\n", x, y);
 }
 
 static gboolean key_press_event(GtkWidget *widget, GdkEventKey *event, GtkWidget* textbox){
@@ -38,6 +56,18 @@ static void destroy(GtkWidget *widget, gpointer data){
   gtk_main_quit();
 }
 
+static void configure_callback(GtkWindow *window, GdkEvent *event, gpointer data){
+  int x, y;
+  GString *buf;
+
+  x = event->configure.x;
+  y = event->configure.y;
+  buf = g_string_new(NULL);
+  g_string_printf(buf, "%d, %d", x, y);
+  gtk_window_set_title(window, buf->str);
+  g_string_free(buf, TRUE);
+}
+
 int main(int argc, char *argv[]){
   GtkWidget *textbox;
 
@@ -47,6 +77,7 @@ int main(int argc, char *argv[]){
   label = gtk_label_new(argv[1]);
   textbox = gtk_entry_new();
   button = gtk_button_new_with_label("Type \"ack\" and press Enter to close");
+  debug_button = gtk_button_new_with_label("Debug");
 
   // Window
   gtk_container_set_border_width(GTK_CONTAINER(window), 10);
@@ -73,14 +104,30 @@ int main(int argc, char *argv[]){
 
   // Button
   g_signal_connect(button, "clicked", G_CALLBACK(button_pressed), textbox);
-  //g_signal_connect_swapped(button, "clicked", G_CALLBACK(gtk_widget_destroy), window);
   gtk_box_pack_start(GTK_BOX(vbox), button, TRUE, TRUE, 0);
   gtk_widget_show(button);
 
+  // Button
+  g_signal_connect(debug_button, "clicked", G_CALLBACK(debug_button_pressed), textbox);
+  gtk_box_pack_start(GTK_BOX(vbox), debug_button, TRUE, TRUE, 0);
+  gtk_widget_show(debug_button);
+
   // Main
   gtk_widget_show(window);
+  gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
   gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER_ALWAYS);
   gtk_widget_grab_focus(GTK_WIDGET(textbox));
+
+  // Called on mouse move
+  //g_signal_connect(G_OBJECT(window), "configure-event", G_CALLBACK(configure_callback), NULL);
+
+  /*
+  FILE *fp;
+  fp = fopen("/tmp/cdata.txt", "w+");
+  fprintf(fp, "The screen is %d pixels wide", width);
+  fclose(fp);
+  */
+
   gtk_main();
   return 0;
 }
